@@ -1,0 +1,9 @@
+# Personal Slack member ID — never commit this
+.env
+
+# OS files
+.DS_Store
+
+# Any local log output from --log
+*.log
+*.json.log
