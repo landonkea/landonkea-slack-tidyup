@@ -1,4 +1,4 @@
-# landonkea-slack-tidyup — Design & Workflow
+# landonkea-slack-tidyup - Design & Workflow
 
 ## High-Level Overview
 

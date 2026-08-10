@@ -1,14 +1,14 @@
 #!/bin/bash
 # ============================================
 # Slack Message Deleter (Shell Script version)
-# No Node.js required — just macOS + Chrome
+# No Node.js required, just macOS + Chrome
 # ============================================
 #
 # WHAT THIS DOES:
 #   Deletes YOUR messages from any Slack channel using Chrome's browser session.
 #   It injects JavaScript into Chrome via AppleScript, then uses Chrome's existing
 #   login session (cookies + localStorage token) to make Slack API calls.
-#   Only YOUR messages are ever deleted — other people's messages are safe.
+#   Only YOUR messages are ever deleted, other people's messages are safe.
 #
 # HOW IT WORKS:
 #   1. AppleScript tells Chrome to run JavaScript in the active tab
@@ -22,8 +22,8 @@
 #   3. Chrome: View > Developer > Allow JavaScript from Apple Events (one-time)
 #
 # USAGE:
-#   chmod +x delete.sh    (first time only — makes the file executable)
-#   cp .env.example .env  (first time only — fill in your own SLACK_USER_ID)
+#   chmod +x delete.sh    (first time only, makes the file executable)
+#   cp .env.example .env  (first time only, fill in your own SLACK_USER_ID)
 #   ./delete.sh [OPTIONS] URL_OR_CHANNEL_ID [URL_OR_CHANNEL_ID2 ...]
 #
 # Run with --help to see all options.
@@ -43,7 +43,7 @@ if [ -z "$SLACK_USER_ID" ]; then
   echo "Copy .env.example to .env and fill in your Slack member ID."
   exit 1
 fi
-MY_USER_ID="$SLACK_USER_ID"  # Your Slack member ID — only YOUR messages get deleted
+MY_USER_ID="$SLACK_USER_ID"  # Your Slack member ID, only YOUR messages get deleted
 
 # ---- Option defaults ----
 AUTO_MODE=0       # -a: auto-detect channel from current Chrome tab
@@ -351,7 +351,7 @@ for CHANNEL_ID in "${CHANNELS[@]}"; do
           dx.send('token=' + encodeURIComponent(token) + '&channel=' + chId + '&ts=' + toDelete[i].ts);
           dr = JSON.parse(dx.responseText);
           if (dr.ok) break;
-          // Don't retry cant_delete_message errors — they will always fail
+          // Don't retry cant_delete_message errors, they will always fail
           if (dr.error === 'cant_delete_message') break;
           // Retry once after 1 second for transient errors
           if (attempt === 1 && doRetry) {

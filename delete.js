@@ -2,7 +2,7 @@
 // Slack Message Deleter (Node.js version)
 // ============================================
 // Deletes YOUR messages from any Slack channel using Chrome's browser session.
-// Works by injecting JavaScript into Chrome via AppleScript — no tokens stored
+// Works by injecting JavaScript into Chrome via AppleScript, no tokens stored
 // on disk, no browser extensions needed. The token lives in Chrome's localStorage
 // and the auth cookies live in Chrome's cookie jar, so both stay safe.
 //
@@ -30,10 +30,10 @@ try {
       const [key, ...rest] = line.split('=');
       if (!process.env[key.trim()]) process.env[key.trim()] = rest.join('=').trim();
     });
-} catch (e) { /* no .env file — fall through to the SLACK_USER_ID check below */ }
+} catch (e) { /* no .env file, fall through to the SLACK_USER_ID check below */ }
 
 // ---- Constants ----
-const MY_USER_ID = process.env.SLACK_USER_ID;  // Your Slack member ID — only YOUR messages get deleted
+const MY_USER_ID = process.env.SLACK_USER_ID;  // Your Slack member ID, only YOUR messages get deleted
 if (!MY_USER_ID) {
   console.error('ERROR: SLACK_USER_ID is not set. Copy .env.example to .env and fill it in.');
   process.exit(1);
@@ -46,11 +46,11 @@ const TMP_AS = '/tmp/slack_runner.scpt'; // Temp file for AppleScript that execu
 // ============================================
 // AppleScript tells Chrome to run JS in the active tab. We use this to make
 // API calls from Chrome's same-origin context (app.slack.com), so Chrome's
-// auth cookies are automatically included — no token theft needed.
+// auth cookies are automatically included, no token theft needed.
 //
 // Why sync XHR? Slack's JS intercepts async fetch() and adds CSRF protection.
 // Sync XHR bypasses that. AppleScript's `execute javascript` only returns
-// values from synchronous code — async results come back empty.
+// values from synchronous code, async results come back empty.
 function runJS(code) {
   fs.writeFileSync(TMP_JS, code);
   fs.writeFileSync(TMP_AS,
@@ -61,7 +61,7 @@ function runJS(code) {
   );
   return execSync('osascript /tmp/slack_runner.scpt', {
     encoding: 'utf-8',
-    timeout: 180000  // 3 minutes — AppleScript kills the command after this
+    timeout: 180000  // 3 minutes, AppleScript kills the command after this
   }).trim();
 }
 
@@ -117,15 +117,15 @@ async function apiWithRetry(method, body) {
     try {
       const r = api(method, body);
       if (r.ok) return r;
-      // Don't retry "message_not_found" or "cant_delete_message" — they won't succeed on retry
+      // Don't retry "message_not_found" or "cant_delete_message", they won't succeed on retry
       if (r.error === 'message_not_found' || r.error === 'cant_delete_message') return r;
-      // Other errors (rate_limited, temporarily_unavailable, etc.) — retry once
+      // Other errors (rate_limited, temporarily_unavailable, etc.), retry once
       if (attempt === 1) {
         log('Attempt 1 failed (' + r.error + '), retrying in 1s...');
         await sleep(1000);
         continue;
       }
-      return r; // Second attempt failed — give up
+      return r; // Second attempt failed, give up
     } catch (e) {
       // Network/timeout error
       if (attempt === 1) {
@@ -133,7 +133,7 @@ async function apiWithRetry(method, body) {
         await sleep(1000);
         continue;
       }
-      throw e; // Second attempt failed — let caller handle it
+      throw e; // Second attempt failed, let caller handle it
     }
   }
 }
@@ -302,7 +302,7 @@ async function processChannel(chId, filter) {
 // HUGE CHANNEL BATCH PROCESSOR
 // ============================================
 // For channels with 7000+ messages that cause AppleScript timeouts.
-// Deletes in batches of 100 — scan a page, delete what we find, repeat.
+// Deletes in batches of 100, scan a page, delete what we find, repeat.
 async function processHugeChannel(chId, filter, opts, logEntries, grandTotal) {
   let toDelete = [];
   let cursor = null;
@@ -532,7 +532,7 @@ async function main() {
         await deleteOne(m, opts, logEntries, grandTotal);
       }
     } catch (e) {
-      // Timeout — fall back to batch mode for huge channels
+      // Timeout, fall back to batch mode for huge channels
       console.log('TIMEOUT - trying batch mode...');
       try {
         await processHugeChannel(chId, filter, opts, logEntries, grandTotal);
@@ -542,7 +542,7 @@ async function main() {
     }
   }
 
-  console.log('\nGrand total — Deleted: ' + grandTotal.deleted + ', Failed: ' + grandTotal.failed);
+  console.log('\nGrand total, Deleted: ' + grandTotal.deleted + ', Failed: ' + grandTotal.failed);
   if (opts.logFile) {
     fs.writeFileSync(opts.logFile, JSON.stringify(logEntries, null, 2));
     console.log('Results saved to: ' + opts.logFile);
