@@ -44,3 +44,7 @@ Run either with `--help` (or no arguments) to see the full option list: age filt
 ## A note on Slack's Terms of Service
 
 This automates actions against your own account using your own already-authenticated session. It doesn't touch anyone else's account or data. Use it for personal message cleanup, not as an unattended or shared service.
+
+## Releases
+
+Tagged versions (`vX.Y.Z`) and release candidates (`vX.Y.Z-rc.N`) get published as GitHub releases automatically. See [RELEASING.md](RELEASING.md) for the branching convention and how to cut one.
