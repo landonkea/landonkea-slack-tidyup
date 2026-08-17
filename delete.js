@@ -109,31 +109,33 @@ function logFail(err, m) {
 // ============================================
 // RETRY HELPER
 // ============================================
-// Attempts an API call up to 2 times (initial + 1 retry).
+// Attempts an API call up to 2 times (initial + 1 retry) by default, or
+// once only when the caller passes retry: false (see --no-retry).
 // Retries on network errors, timeouts, and transient Slack errors.
 // Returns the API response or null if all attempts failed.
-async function apiWithRetry(method, body) {
-  for (let attempt = 1; attempt <= 2; attempt++) {
+async function apiWithRetry(method, body, retry = true) {
+  const maxAttempts = retry ? 2 : 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const r = api(method, body);
       if (r.ok) return r;
       // Don't retry "message_not_found" or "cant_delete_message", they won't succeed on retry
       if (r.error === 'message_not_found' || r.error === 'cant_delete_message') return r;
       // Other errors (rate_limited, temporarily_unavailable, etc.), retry once
-      if (attempt === 1) {
-        log('Attempt 1 failed (' + r.error + '), retrying in 1s...');
+      if (attempt < maxAttempts) {
+        log('Attempt ' + attempt + ' failed (' + r.error + '), retrying in 1s...');
         await sleep(1000);
         continue;
       }
-      return r; // Second attempt failed, give up
+      return r; // Final attempt failed, give up
     } catch (e) {
       // Network/timeout error
-      if (attempt === 1) {
-        log('Attempt 1 threw (' + e.message.substring(0, 40) + '), retrying in 1s...');
+      if (attempt < maxAttempts) {
+        log('Attempt ' + attempt + ' threw (' + e.message.substring(0, 40) + '), retrying in 1s...');
         await sleep(1000);
         continue;
       }
-      throw e; // Second attempt failed, let caller handle it
+      throw e; // Final attempt failed, let caller handle it
     }
   }
 }
@@ -147,7 +149,7 @@ async function deleteOne(m, opts, logEntries, grandTotal) {
   if (opts.limit > 0 && grandTotal.deleted >= opts.limit) return false;
 
   try {
-    const r = await apiWithRetry('chat.delete', { channel: m.ch, ts: m.ts });
+    const r = await apiWithRetry('chat.delete', { channel: m.ch, ts: m.ts }, opts.retry);
     if (r.ok) {
       grandTotal.deleted++;
       logDelete(m);
@@ -174,7 +176,8 @@ function parseArgs(args) {
     urls: [],        auto: false,     days: 0,         weeks: 0,
     months: 0,       after: 0,        before: 0,       dryRun: false,
     yes: false,      limit: 0,        logFile: null,   quiet: false,
-    verbose: false   // --verbose: extra debug output
+    verbose: false,  // --verbose: extra debug output
+    retry: true      // --retry/--no-retry: retry failed deletions once (default: on)
   };
   let i = 0;
   while (i < args.length) {
@@ -191,6 +194,8 @@ function parseArgs(args) {
     else if (a === '--log') { opts.logFile = args[++i]; i++; }
     else if (a === '--quiet') { opts.quiet = true; i++; }
     else if (a === '--verbose') { opts.verbose = true; i++; }
+    else if (a === '--retry') { opts.retry = true; i++; }
+    else if (a === '--no-retry') { opts.retry = false; i++; }
     else { opts.urls.push(a); i++; }
   }
   return opts;
@@ -439,6 +444,8 @@ async function main() {
     console.log('  --log FILE        Save results to a log file');
     console.log('  --quiet           Minimal output');
     console.log('  --verbose         Extra debug output');
+    console.log('  --retry           Retry failed deletions once (default: on)');
+    console.log('  --no-retry        Don\'t retry failed deletions');
     console.log('');
     console.log('Examples:');
     console.log('  node delete.js https://app.slack.com/client/TEAMID/CHANNELID');
@@ -483,6 +490,7 @@ async function main() {
   else if (parseTimeframe(opts) > 0) console.log('Timeframe: only messages older than ' + parseTimeframe(opts) + ' days');
   if (opts.limit > 0) console.log('Limit: stopping after ' + opts.limit + ' deletions');
   if (opts.dryRun) console.log('MODE: DRY RUN (no messages will be deleted)');
+  if (!opts.retry) console.log('Retry: disabled');
   console.log('');
 
   let logEntries = [];
